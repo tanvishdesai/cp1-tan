@@ -86,5 +86,9 @@ export const MAX_ANSWERS_KEPT_ON_RESOLVE = 3;
 // RAG chatbot: minimum cosine similarity for a retrieved doc to count as a match.
 export const CHATBOT_MATCH_THRESHOLD = 0.3;
 
+// Query amalgamation: cosine similarity to group "related" queries for admin
+// review (broader than the strict duplicate threshold).
+export const AMALGAMATION_SIMILARITY_THRESHOLD = 0.6;
+
 // Embedding dimensions (fixed). Mirrors AI_EMBED_DIMS env default.
 export const EMBEDDING_DIMS = 768;

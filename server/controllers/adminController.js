@@ -1,4 +1,5 @@
 import * as userService from '../services/userService.js';
+import * as adminService from '../services/adminService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const banUser = asyncHandler(async (req, res) => {
@@ -22,4 +23,46 @@ export const issueNegativeBadge = asyncHandler(async (req, res) => {
     req.body?.reason,
   );
   res.json(result);
+});
+
+export const metrics = asyncHandler(async (_req, res) => {
+  res.json(await adminService.getMetrics());
+});
+
+export const listUsers = asyncHandler(async (req, res) => {
+  res.json(await adminService.listUsers(req.query));
+});
+
+export const setRole = asyncHandler(async (req, res) => {
+  res.json(await adminService.setRole(req.user, req.params.id, req.body?.role));
+});
+
+export const listModeration = asyncHandler(async (req, res) => {
+  res.json(await adminService.listModeration(req.query));
+});
+
+export const resolveModeration = asyncHandler(async (req, res) => {
+  res.json(await adminService.resolveModeration(req.user, req.params.id, req.body?.note));
+});
+
+export const dismissModeration = asyncHandler(async (req, res) => {
+  res.json(await adminService.dismissModeration(req.user, req.params.id, req.body?.note));
+});
+
+export const mergeQueries = asyncHandler(async (req, res) => {
+  res.json(
+    await adminService.mergeQueries(req.user, {
+      canonicalId: req.body?.canonicalId,
+      duplicateId: req.body?.duplicateId,
+      moderationId: req.body?.moderationId,
+    }),
+  );
+});
+
+export const queryClusters = asyncHandler(async (_req, res) => {
+  res.json({ clusters: await adminService.findQueryClusters() });
+});
+
+export const audit = asyncHandler(async (req, res) => {
+  res.json(await adminService.listAudit(req.query));
 });

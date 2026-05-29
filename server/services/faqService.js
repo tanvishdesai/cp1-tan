@@ -64,6 +64,47 @@ export async function createFaq({ category, question, answer, sort_order = 0, so
   return strip(entry.toObject());
 }
 
+/** Admin: edit a FAQ entry; re-embeds when the question/answer text changes. */
+export async function updateFaq(id, fields) {
+  const entry = await FaqEntry.findOne({ _id: id, is_deleted: false });
+  if (!entry) throw ApiError.notFound('FAQ entry not found');
+
+  const question = fields.question !== undefined ? String(fields.question).trim() : entry.question;
+  const answer = fields.answer !== undefined ? String(fields.answer).trim() : entry.answer;
+  const textChanged = question !== entry.question || answer !== entry.answer;
+
+  entry.question = question;
+  entry.answer = answer;
+  if (fields.category !== undefined) entry.category = String(fields.category).trim() || entry.category;
+  if (fields.sort_order !== undefined) entry.sort_order = Number(fields.sort_order) || 0;
+  if (fields.is_outdated !== undefined) entry.is_outdated = Boolean(fields.is_outdated);
+  if (textChanged) entry.embedding = await ai.embed(faqText(question, answer));
+
+  await entry.save();
+  return strip(entry.toObject());
+}
+
+/** Admin: flag/unflag a FAQ entry as outdated. */
+export async function setFaqOutdated(id, isOutdated) {
+  const entry = await FaqEntry.findOneAndUpdate(
+    { _id: id, is_deleted: false },
+    { is_outdated: Boolean(isOutdated) },
+    { new: true },
+  ).lean();
+  if (!entry) throw ApiError.notFound('FAQ entry not found');
+  return strip(entry);
+}
+
+/** Admin: soft-delete a FAQ entry. */
+export async function deleteFaq(id) {
+  const entry = await FaqEntry.findOne({ _id: id, is_deleted: false });
+  if (!entry) throw ApiError.notFound('FAQ entry not found');
+  entry.is_deleted = true;
+  entry.deleted_at = new Date();
+  await entry.save();
+  return { ok: true };
+}
+
 /**
  * Promote a resolved community Q&A into the FAQ (Milestone 5).
  * Uses the query title as the question and its accepted answer as the answer.
