@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import BanBanner from './components/BanBanner.jsx';
+import Chatbot from './components/Chatbot.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
@@ -12,6 +13,7 @@ import AskQuery from './pages/AskQuery.jsx';
 import EditQuery from './pages/EditQuery.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
 import Profile from './pages/Profile.jsx';
+import Faq from './pages/Faq.jsx';
 
 export default function App() {
   return (
@@ -26,6 +28,7 @@ export default function App() {
           <Route path="/queries" element={<QueryList />} />
           <Route path="/queries/:id" element={<QueryDetail />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/faq" element={<Faq />} />
           <Route path="/users/:id" element={<Profile />} />
           <Route
             path="/ask"
@@ -57,6 +60,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <Chatbot />
     </>
   );
 }

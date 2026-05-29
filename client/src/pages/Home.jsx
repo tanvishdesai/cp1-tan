@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import GreetingBanner from '../components/GreetingBanner.jsx';
 
 export default function Home() {
   const { user } = useAuth();
   return (
     <div className="container">
+      <GreetingBanner />
       <h1>FAQ Platform</h1>
       <p className="lead">
         A self-improving knowledge base: an AI chatbot over a curated FAQ, structured query intake

@@ -11,11 +11,12 @@ import {
   reportAnswer,
 } from '../api/answers.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { promoteQuery } from '../api/faq.js';
 
 export default function QueryDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [query, setQuery] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [error, setError] = useState(null);
@@ -56,6 +57,15 @@ export default function QueryDetail() {
     window.alert('Thanks — a moderator will review it.');
   };
 
+  const onPromote = async () => {
+    try {
+      await promoteQuery(id);
+      window.alert('Promoted to the FAQ.');
+    } catch (err) {
+      window.alert(err.response?.data?.error ?? 'Could not promote this question.');
+    }
+  };
+
   const resolved = query?.status === 'resolved';
 
   if (loading) return <div className="container">Loading…</div>;
@@ -83,6 +93,11 @@ export default function QueryDetail() {
           {user && !query.is_owner && (
             <button className="btn-link" onClick={onReportQuery}>
               Report
+            </button>
+          )}
+          {isAdmin && resolved && (
+            <button className="btn-link" onClick={onPromote}>
+              Promote to FAQ
             </button>
           )}
         </div>
