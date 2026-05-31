@@ -32,14 +32,29 @@ export default function Faq() {
     };
   }, []);
 
-  const onSearch = async (e) => {
-    e.preventDefault();
+  // Dynamic search: query the FAQ semantically as the user types (debounced),
+  // so matching entries surface live without pressing a button.
+  useEffect(() => {
     if (!term.trim()) {
       setResults(null);
-      return;
+      return undefined;
     }
-    setResults(await searchFaqs(term));
-  };
+    let active = true;
+    const t = setTimeout(async () => {
+      try {
+        const r = await searchFaqs(term);
+        if (active) setResults(r);
+      } catch {
+        /* ignore transient search errors */
+      }
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [term]);
+
+  const onSearch = (e) => e.preventDefault();
 
   const toggleItem = (key) => setOpenItems((o) => ({ ...o, [key]: !o[key] }));
   const toggleCat = (cat) => setOpenCats((o) => ({ ...o, [cat]: !o[cat] }));

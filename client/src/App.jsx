@@ -1,7 +1,8 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/AppShell.jsx';
 import Chatbot from './components/Chatbot.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import { useAuth } from './context/AuthContext.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
@@ -25,13 +26,33 @@ import AdminAudit from './pages/admin/AdminAudit.jsx';
 import AdminMaintenance from './pages/admin/AdminMaintenance.jsx';
 
 export default function App() {
+  const { user, loading } = useAuth();
+
+  // Authentication gate: until a user is logged in, expose nothing but the
+  // auth screens — no app shell, dashboards, or sections. Everything else
+  // redirects to /login; logging in lands on the main app.
+  if (loading) {
+    return <div className="auth-gate">Loading…</div>;
+  }
+  if (!user) {
+    return (
+      <div className="auth-screen">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </div>
+    );
+  }
+
   return (
     <>
       <AppShell>
         <Routes>
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="/register" element={<Navigate to="/" replace />} />
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/queries" element={<QueryList />} />
           <Route path="/queries/:id" element={<QueryDetail />} />
           <Route path="/leaderboard" element={<Leaderboard />} />

@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { listUsers, setRole, banUser, unbanUser } from '../../api/admin.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function AdminUsers() {
+  const { user } = useAuth();
   const [data, setData] = useState({ items: [] });
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
@@ -67,24 +69,28 @@ export default function AdminUsers() {
               <td>{u.points}</td>
               <td>{u.is_banned ? <span className="badge flag">banned</span> : 'active'}</td>
               <td>
-                <div className="row">
-                  <button
-                    className="btn-link"
-                    disabled={busy}
-                    onClick={() => act(() => setRole(u.id, u.role === 'admin' ? 'user' : 'admin'))}
-                  >
-                    {u.role === 'admin' ? 'Make user' : 'Make admin'}
-                  </button>
-                  {u.is_banned ? (
-                    <button className="btn-link" disabled={busy} onClick={() => act(() => unbanUser(u.id))}>
-                      Unban
+                {String(u.id) === String(user?.id) ? (
+                  <span className="muted small">You</span>
+                ) : (
+                  <div className="row">
+                    <button
+                      className="btn-link"
+                      disabled={busy}
+                      onClick={() => act(() => setRole(u.id, u.role === 'admin' ? 'user' : 'admin'))}
+                    >
+                      {u.role === 'admin' ? 'Make user' : 'Make admin'}
                     </button>
-                  ) : (
-                    <button className="btn-link danger" disabled={busy} onClick={() => onBan(u)}>
-                      Ban
-                    </button>
-                  )}
-                </div>
+                    {u.is_banned ? (
+                      <button className="btn-link" disabled={busy} onClick={() => act(() => unbanUser(u.id))}>
+                        Unban
+                      </button>
+                    ) : (
+                      <button className="btn-link danger" disabled={busy} onClick={() => onBan(u)}>
+                        Ban
+                      </button>
+                    )}
+                  </div>
+                )}
               </td>
             </tr>
           ))}

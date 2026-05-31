@@ -31,3 +31,18 @@ export async function issueNegativeBadge(id, key, reason) {
   const { data } = await api.post(`/admin/users/${id}/badge`, { key, reason });
   return data;
 }
+
+export async function revokeNegativeBadge(id, key) {
+  const { data } = await api.delete(`/admin/users/${id}/badge/${key}`);
+  return data;
+}
+
+export async function awardCustomBadge(id, payload) {
+  const { data } = await api.post(`/admin/users/${id}/custom-badge`, payload);
+  return data;
+}
+
+export async function revokeCustomBadge(id, key) {
+  const { data } = await api.delete(`/admin/users/${id}/custom-badge/${key}`);
+  return data;
+}

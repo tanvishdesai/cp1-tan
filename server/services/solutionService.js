@@ -7,17 +7,21 @@ import {
   QUERY_STATUS,
   NOTIFICATION_TYPE,
   GRACE_PERIOD_HOURS,
+  ROLES,
 } from '../config/constants.js';
 
 /**
- * Path A of the Solution Marking Engine: the query author picks an answer.
- * Starts the 48h grace period; points are awarded later at finalization.
+ * Path A of the Solution Marking Engine: the query author (or an admin, as an
+ * approved solution) picks an answer. Starts the 48h grace period; points are
+ * awarded later at finalization.
  */
 export async function markSolution(user, queryId, answerId) {
   const query = await Query.findOne({ _id: queryId, is_deleted: false });
   if (!query) throw ApiError.notFound('Query not found');
-  if (String(query.author_id) !== String(user._id)) {
-    throw ApiError.forbidden('Only the question author can mark a solution');
+  const isAuthor = String(query.author_id) === String(user._id);
+  const isAdmin = user.role === ROLES.ADMIN;
+  if (!isAuthor && !isAdmin) {
+    throw ApiError.forbidden('Only the question author or an admin can mark a solution');
   }
 
   const answer = await Answer.findOne({ _id: answerId, query_id: query._id, is_deleted: false });

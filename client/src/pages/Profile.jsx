@@ -1,11 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { getProfile, banUser, unbanUser, issueNegativeBadge } from '../api/users.js';
+import {
+  getProfile,
+  banUser,
+  unbanUser,
+  issueNegativeBadge,
+  revokeNegativeBadge,
+  awardCustomBadge,
+  revokeCustomBadge,
+} from '../api/users.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { POSITIVE_BADGES } from '../lib/reputation.js';
 
 export default function Profile() {
   const { id } = useParams();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +35,9 @@ export default function Profile() {
 
   if (loading) return <div className="container">Loading…</div>;
   if (error) return <div className="container"><p className="muted">{error}</p></div>;
+
+  const isSelf = String(user?.id) === String(profile.id);
+  const earnedKeys = new Set(profile.badges.map((b) => b.key));
 
   return (
     <div className="container">
@@ -71,18 +83,50 @@ export default function Profile() {
 
       <section>
         <h2>Badges</h2>
-        {profile.badges.length === 0 ? (
-          <p className="muted">No badges earned yet.</p>
-        ) : (
-          <ul className="badge-row">
-            {profile.badges.map((b) => (
-              <li key={b.key} title={`${b.threshold}+ points`}>
-                <span className="badge-icon">{b.icon}</span> {b.label}
+        <p className="muted small">Reputation badges unlock automatically as points are earned.</p>
+        <ul className="badge-catalog">
+          {POSITIVE_BADGES.map((b) => {
+            const earned = earnedKeys.has(b.key);
+            return (
+              <li
+                key={b.key}
+                className={earned ? 'earned' : 'locked'}
+                title={earned ? `Earned · ${b.threshold}+ points` : `Unlocks at ${b.threshold} points`}
+              >
+                <span className="badge-icon">{b.icon}</span>
+                <span className="badge-label">{b.label}</span>
+                <span className="badge-req">{earned ? 'Earned' : `${b.threshold} pts`}</span>
               </li>
-            ))}
-          </ul>
-        )}
+            );
+          })}
+        </ul>
       </section>
+
+      {(profile.custom_badges?.length > 0 || (isAdmin && !isSelf)) && (
+        <section>
+          <h2>Awarded badges</h2>
+          {profile.custom_badges?.length ? (
+            <ul className="badge-row">
+              {profile.custom_badges.map((b) => (
+                <li key={b.key} className="custom" title={b.reason ?? ''}>
+                  <span className="badge-icon">{b.icon}</span> {b.label}
+                  {isAdmin && !isSelf && (
+                    <button
+                      className="badge-del"
+                      title="Revoke badge"
+                      onClick={() => revokeCustomBadge(profile.id, b.key).then(load)}
+                    >
+                      ×
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">No awarded badges yet.</p>
+          )}
+        </section>
+      )}
 
       {profile.negative_badges.length > 0 && (
         <section>
@@ -91,13 +135,25 @@ export default function Profile() {
             {profile.negative_badges.map((b, i) => (
               <li key={i} className="negative" title={b.reason ?? ''}>
                 <span className="badge-icon">{b.icon}</span> {b.label}
+                {isAdmin && !isSelf && (
+                  <button
+                    className="badge-del"
+                    title="Remove flag"
+                    onClick={() => revokeNegativeBadge(profile.id, b.key).then(load)}
+                  >
+                    ×
+                  </button>
+                )}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      {isAdmin && <AdminControls profile={profile} onChange={load} />}
+      {isAdmin && !isSelf && <AdminControls profile={profile} onChange={load} />}
+      {isAdmin && isSelf && (
+        <p className="muted small">You can't apply moderation actions to your own account.</p>
+      )}
     </div>
   );
 }
@@ -127,6 +183,14 @@ function AdminControls({ profile, onChange }) {
     run(() => issueNegativeBadge(profile.id, key, reason));
   };
 
+  const awardBadge = () => {
+    const label = window.prompt('Badge name? (e.g. "Top Contributor")');
+    if (!label || !label.trim()) return;
+    const icon = window.prompt('Badge emoji/icon?', '🏅') ?? '🏅';
+    const reason = window.prompt('Reason / note? (optional)') ?? '';
+    run(() => awardCustomBadge(profile.id, { label: label.trim(), icon, reason }));
+  };
+
   return (
     <section className="admin-controls">
       <h2>Moderation</h2>
@@ -148,6 +212,12 @@ function AdminControls({ profile, onChange }) {
         </button>
         <button className="btn-link danger" disabled={busy} onClick={() => badge('suspended')}>
           ☠️ Suspend
+        </button>
+      </div>
+      <h2>Badges</h2>
+      <div className="row">
+        <button className="btn-secondary" disabled={busy} onClick={awardBadge}>
+          🏅 Award a custom badge
         </button>
       </div>
     </section>

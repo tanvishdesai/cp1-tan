@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { listQueries } from '../api/queries.js';
+import { listQueries, listCategories } from '../api/queries.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { relativeTime, initials } from '../lib/time.js';
 
@@ -29,6 +29,18 @@ export default function QueryList() {
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState({ items: [], total: 0, page: 1, limit: 20 });
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+
+  // Load the category list once for the filter dropdown.
+  useEffect(() => {
+    let active = true;
+    listCategories()
+      .then((cats) => active && setCategories(cats))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const q = params.get('q') ?? '';
   const category = params.get('category') ?? '';
@@ -68,6 +80,15 @@ export default function QueryList() {
     setParams(next);
   };
 
+  // Dynamic search: debounce free-text typing (q + tag) into the URL so results
+  // update live as you type — no need to press a button.
+  useEffect(() => {
+    if (form.q === q && form.tag === tag) return undefined;
+    const t = setTimeout(() => commit({ q: form.q, tag: form.tag }), 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.q, form.tag]);
+
   const onApply = (e) => {
     e.preventDefault();
     commit({ q: form.q, category: form.category, tag: form.tag, status: form.status });
@@ -103,12 +124,18 @@ export default function QueryList() {
             onChange={(e) => setForm((f) => ({ ...f, q: e.target.value }))}
           />
         </div>
-        <input
-          className="filter-input"
-          placeholder="Category"
+        <select
+          className="filter-select"
           value={form.category}
-          onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-        />
+          onChange={(e) => commit({ category: e.target.value })}
+        >
+          <option value="">All Categories</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
         <input
           className="filter-input"
           placeholder="Tag"
@@ -126,7 +153,6 @@ export default function QueryList() {
             </option>
           ))}
         </select>
-        <button className="btn-primary">Apply</button>
         {hasFilters && (
           <button type="button" className="btn-ghost" onClick={onClear}>
             Clear

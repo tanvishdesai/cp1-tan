@@ -13,6 +13,20 @@ const negativeBadgeSchema = new mongoose.Schema(
   { _id: false },
 );
 
+// Admin-authored badges: created, assigned and removed by hand (independent of
+// the points-tiered positive badges, which sync automatically from reputation).
+const customBadgeSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true }, // slug derived from the label
+    label: { type: String, required: true },
+    icon: { type: String, default: '🏅' },
+    reason: String,
+    issued_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    issued_at: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -23,6 +37,7 @@ const userSchema = new mongoose.Schema(
     points: { type: Number, default: 0 },
     badges: { type: [String], default: [] }, // positive badge keys
     negative_badges: { type: [negativeBadgeSchema], default: [] },
+    custom_badges: { type: [customBadgeSchema], default: [] }, // admin-authored
 
     spam_flag_count: { type: Number, default: 0 },
     is_banned: { type: Boolean, default: false },

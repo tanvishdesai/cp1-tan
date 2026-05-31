@@ -235,6 +235,30 @@ export async function findQueryClusters() {
   return clusters;
 }
 
+/**
+ * Group active queries by category with a per-status breakdown — the central
+ * "technical queries by topic" view for the admin dashboard.
+ */
+export async function queriesByCategory() {
+  const rows = await Query.aggregate([
+    { $match: { is_deleted: false } },
+    { $group: { _id: { category: '$category', status: '$status' }, n: { $sum: 1 } } },
+  ]);
+
+  const map = new Map();
+  for (const r of rows) {
+    const category = r._id.category || 'general';
+    if (!map.has(category)) {
+      map.set(category, { category, total: 0, open: 0, answered: 0, resolved: 0, archived: 0 });
+    }
+    const entry = map.get(category);
+    entry.total += r.n;
+    if (r._id.status in entry) entry[r._id.status] += r.n;
+  }
+
+  return [...map.values()].sort((a, b) => b.total - a.total);
+}
+
 /** Paginated audit log (most recent first). */
 export async function listAudit(opts = {}) {
   const { limit, page, skip } = paginate(opts);

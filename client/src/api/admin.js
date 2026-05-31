@@ -50,6 +50,11 @@ export async function getClusters() {
   return data.clusters;
 }
 
+export async function getQueriesByCategory() {
+  const { data } = await api.get('/admin/queries/by-category');
+  return data.categories;
+}
+
 export async function mergeQueries(payload) {
   const { data } = await api.post('/admin/queries/merge', payload);
   return data;

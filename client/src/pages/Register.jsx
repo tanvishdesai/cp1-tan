@@ -8,6 +8,7 @@ export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -40,14 +41,25 @@ export default function Register() {
         </label>
         <label>
           Password
-          <input
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={onChange}
-            minLength={8}
-            required
-          />
+          <span className="pw-field">
+            <input
+              name="password"
+              type={showPw ? 'text' : 'password'}
+              value={form.password}
+              onChange={onChange}
+              minLength={8}
+              required
+            />
+            <button
+              type="button"
+              className="pw-toggle"
+              onClick={() => setShowPw((s) => !s)}
+              aria-label={showPw ? 'Hide password' : 'Show password'}
+              title={showPw ? 'Hide password' : 'Show password'}
+            >
+              <span className="material-symbols-outlined">{showPw ? 'visibility_off' : 'visibility'}</span>
+            </button>
+          </span>
         </label>
         <button className="btn-primary" disabled={busy}>
           {busy ? 'Creating…' : 'Sign up'}

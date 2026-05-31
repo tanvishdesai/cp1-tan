@@ -111,14 +111,14 @@ export default function QueryDetail() {
         <h1>{query.title}</h1>
         <div className="row">
           {query.is_owner && (
-            <>
-              <Link to={`/queries/${id}/edit`} className="btn-link">
-                Edit
-              </Link>
-              <button className="btn-link danger" onClick={onDeleteQuery}>
-                Delete
-              </button>
-            </>
+            <Link to={`/queries/${id}/edit`} className="btn-link">
+              Edit
+            </Link>
+          )}
+          {(query.is_owner || isAdmin) && (
+            <button className="btn-link danger" onClick={onDeleteQuery}>
+              Delete{!query.is_owner && isAdmin ? ' (admin)' : ''}
+            </button>
           )}
           {user && !query.is_owner && (
             <button className="btn-link" onClick={onReportQuery}>
@@ -236,7 +236,9 @@ export default function QueryDetail() {
           <AnswerCard
             key={a.id}
             answer={a}
-            canAccept={query.is_owner && !resolved}
+            canAccept={(query.is_owner || isAdmin) && !resolved}
+            isAdmin={isAdmin}
+            isOwner={query.is_owner}
             canVote={Boolean(user) && !a.is_owner}
             canComment={Boolean(user)}
             onChange={loadAll}
@@ -252,8 +254,12 @@ export default function QueryDetail() {
   );
 }
 
-function AnswerCard({ answer, canAccept, canVote, canComment, onChange, queryId }) {
+function AnswerCard({ answer, canAccept, isAdmin, isOwner, canVote, canComment, onChange, queryId }) {
   const [busy, setBusy] = useState(false);
+  // Admin approving someone else's answer reads as "approve"; the author's own
+  // acceptance keeps the familiar "mark as solution" wording.
+  const acceptLabel = isAdmin && !isOwner ? 'Approve as solution' : 'Mark as solution';
+  const canDelete = answer.is_owner || isAdmin;
 
   const onVote = async (value) => {
     setBusy(true);
@@ -325,12 +331,12 @@ function AnswerCard({ answer, canAccept, canVote, canComment, onChange, queryId 
           </span>
           {canAccept && !answer.is_accepted && (
             <button className="btn-link" onClick={onAccept} disabled={busy}>
-              Mark as solution
+              {acceptLabel}
             </button>
           )}
-          {answer.is_owner && (
+          {canDelete && (
             <button className="btn-link danger" onClick={onDelete}>
-              Delete
+              Delete{!answer.is_owner && isAdmin ? ' (admin)' : ''}
             </button>
           )}
           {!answer.is_owner && (

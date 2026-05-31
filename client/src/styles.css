@@ -2036,3 +2036,101 @@ select:focus,
 .profile-head .chip {
   font-size: 0.8rem;
 }
+
+/* --- Auth gate (logged-out shell) --- */
+.auth-gate,
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg, #f8fafc);
+}
+.auth-screen .container.narrow {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* --- Password show/hide --- */
+.pw-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pw-field input {
+  flex: 1;
+  padding-right: 2.5rem;
+}
+.pw-toggle {
+  position: absolute;
+  right: 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  display: inline-flex;
+  padding: 0.35rem;
+  border-radius: var(--radius-sm);
+}
+.pw-toggle:hover {
+  color: var(--primary);
+}
+.pw-toggle .material-symbols-outlined {
+  font-size: 1.2rem;
+}
+
+/* --- Badge catalog (available badges) --- */
+.badge-catalog {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.badge-catalog li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.badge-catalog li.locked {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+.badge-catalog li.earned {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+}
+.badge-catalog .badge-req {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.badge-row .custom {
+  border-color: var(--primary);
+}
+.badge-del {
+  margin-left: 0.4rem;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+.badge-del:hover {
+  color: #dc2626;
+}
+
+/* --- Admin queries-by-category table --- */
+.cat-table td,
+.cat-table th {
+  text-align: left;
+}
+.cat-table td + td,
+.cat-table th + th {
+  text-align: right;
+}

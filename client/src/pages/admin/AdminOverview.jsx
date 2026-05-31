@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getMetrics, getHealth, getAudit, listUsers } from '../../api/admin.js';
+import { getMetrics, getHealth, getAudit, listUsers, getQueriesByCategory } from '../../api/admin.js';
 import { relativeTime } from '../../lib/time.js';
 
 function KpiCard({ icon, label, value, sub, tone }) {
@@ -21,10 +21,14 @@ export default function AdminOverview() {
   const [health, setHealth] = useState(null);
   const [audit, setAudit] = useState([]);
   const [approvals, setApprovals] = useState(0);
+  const [byCategory, setByCategory] = useState([]);
 
   useEffect(() => {
     getMetrics().then(setMetrics).catch(() => setMetrics(null));
     getHealth().then(setHealth).catch(() => setHealth(null));
+    getQueriesByCategory()
+      .then((c) => setByCategory(c ?? []))
+      .catch(() => setByCategory([]));
     getAudit({ limit: 6 })
       .then((d) => setAudit(d.items ?? []))
       .catch(() => setAudit([]));
@@ -116,6 +120,40 @@ export default function AdminOverview() {
                 </li>
               ))}
             </ul>
+          )}
+        </section>
+
+        <section className="card">
+          <div className="card-head">
+            <h3>Queries by Category</h3>
+          </div>
+          {byCategory.length === 0 ? (
+            <p className="muted">No queries yet.</p>
+          ) : (
+            <table className="admin-table cat-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Total</th>
+                  <th>Open</th>
+                  <th>Answered</th>
+                  <th>Resolved</th>
+                </tr>
+              </thead>
+              <tbody>
+                {byCategory.map((c) => (
+                  <tr key={c.category}>
+                    <td>
+                      <Link to={`/queries?category=${encodeURIComponent(c.category)}`}>{c.category}</Link>
+                    </td>
+                    <td>{c.total}</td>
+                    <td>{c.open}</td>
+                    <td>{c.answered}</td>
+                    <td>{c.resolved}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </section>
 

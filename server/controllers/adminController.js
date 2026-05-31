@@ -25,6 +25,27 @@ export const issueNegativeBadge = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+export const revokeNegativeBadge = asyncHandler(async (req, res) => {
+  res.json(await userService.revokeNegativeBadge(req.user, req.params.id, req.params.key));
+});
+
+export const awardCustomBadge = asyncHandler(async (req, res) => {
+  const result = await userService.awardCustomBadge(req.user, req.params.id, {
+    label: req.body?.label,
+    icon: req.body?.icon,
+    reason: req.body?.reason,
+  });
+  res.status(201).json(result);
+});
+
+export const revokeCustomBadge = asyncHandler(async (req, res) => {
+  res.json(await userService.revokeCustomBadge(req.user, req.params.id, req.params.key));
+});
+
+export const queriesByCategory = asyncHandler(async (_req, res) => {
+  res.json({ categories: await adminService.queriesByCategory() });
+});
+
 export const metrics = asyncHandler(async (_req, res) => {
   res.json(await adminService.getMetrics());
 });

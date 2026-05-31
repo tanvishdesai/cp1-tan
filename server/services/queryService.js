@@ -198,6 +198,12 @@ async function withEngagement(items, viewerId) {
   }));
 }
 
+/** Distinct categories in use across active queries (for filter dropdowns). */
+export async function listCategories() {
+  const cats = await Query.distinct('category', { is_deleted: false, is_archived: false });
+  return cats.filter(Boolean).sort((a, b) => a.localeCompare(b));
+}
+
 /** Fetch one query and record an LRU access touch. */
 export async function getQuery(id, viewerId) {
   const doc = await Query.findOneAndUpdate(

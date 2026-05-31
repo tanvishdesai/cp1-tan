@@ -11,6 +11,12 @@ export async function getQuery(id) {
   return data.query;
 }
 
+// Distinct categories in use, for filter dropdowns.
+export async function listCategories() {
+  const { data } = await api.get('/queries/categories');
+  return data.categories;
+}
+
 /**
  * Create a query. Sends multipart/form-data so screenshots can ride along.
  * `fields` may include title, body, category, tags, is_anonymous, contact_email,

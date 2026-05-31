@@ -231,7 +231,45 @@ export async function toggleLike(user, answerId) {
   return { liked: res.liked, like_count: res.like_count };
 }
 
-/** Soft-delete an answer (author or admin). */
+/**
+ * Re-derive a query's status from its surviving answers. Called after an answer
+ * is removed so a thread never shows "resolved/answered" with no replies left,
+ * and a deleted accepted answer no longer marks the thread as solved.
+ */
+async function reconcileQueryStatus(queryId) {
+  const query = await Query.findOne({ _id: queryId, is_deleted: false });
+  if (!query) return;
+
+  const remaining = await Answer.countDocuments({ query_id: queryId, is_deleted: false });
+
+  // The accepted answer is gone if it was the one deleted.
+  if (query.accepted_answer_id) {
+    const acceptedAlive = await Answer.exists({
+      _id: query.accepted_answer_id,
+      is_deleted: false,
+    });
+    if (!acceptedAlive) {
+      query.accepted_answer_id = null;
+      query.grace_period_deadline = null;
+    }
+  }
+
+  if (remaining === 0) {
+    // No replies left → back to an open question.
+    query.status = QUERY_STATUS.OPEN;
+    query.first_answered_at = null;
+  } else if (
+    (query.status === QUERY_STATUS.RESOLVED || query.status === QUERY_STATUS.ANSWERED) &&
+    !query.accepted_answer_id
+  ) {
+    // Still has replies but no accepted solution → answered, not resolved.
+    query.status = QUERY_STATUS.ANSWERED;
+  }
+
+  await query.save();
+}
+
+/** Soft-delete an answer (author or admin), then reconcile the query's status. */
 export async function deleteAnswer(user, answerId) {
   const answer = await Answer.findOne({ _id: answerId, is_deleted: false });
   if (!answer) throw ApiError.notFound('Answer not found');
@@ -242,6 +280,8 @@ export async function deleteAnswer(user, answerId) {
   answer.is_deleted = true;
   answer.deleted_at = new Date();
   await answer.save();
+
+  await reconcileQueryStatus(answer.query_id);
   return { ok: true };
 }
 

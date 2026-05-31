@@ -58,8 +58,11 @@ export default function AdminFaqManager() {
 
   return (
     <div>
-      <form className="form" onSubmit={submit}>
-        <h2>{editing ? 'Edit FAQ entry' : 'New FAQ entry'}</h2>
+      <form className="form card faq-editor" onSubmit={submit}>
+        <h2>
+          <span className="material-symbols-outlined">{editing ? 'edit' : 'add_circle'}</span>
+          {editing ? ' Edit FAQ entry' : ' Create a new FAQ'}
+        </h2>
         <div className="grid-2">
           <label>
             Category
@@ -80,7 +83,7 @@ export default function AdminFaqManager() {
         </label>
         <div className="row">
           <button className="btn-primary" disabled={busy}>
-            {editing ? 'Save changes' : 'Add entry'}
+            {editing ? 'Save changes' : '+ Create FAQ'}
           </button>
           {editing && (
             <button

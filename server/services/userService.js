@@ -11,7 +11,7 @@ import { POSITIVE_BADGES, NEGATIVE_BADGES, NOTIFICATION_TYPE } from '../config/c
 /** Public profile: reputation, badges, governance status, and activity counts. */
 export async function getProfile(userId) {
   const user = await User.findOne({ _id: userId, is_deleted: false })
-    .select('name points badges negative_badges is_banned ban_expires_at ban_reason requires_approval createdAt')
+    .select('name points badges negative_badges custom_badges is_banned ban_expires_at ban_reason requires_approval createdAt')
     .lean();
   if (!user) throw ApiError.notFound('User not found');
 
@@ -32,6 +32,7 @@ export async function getProfile(userId) {
     badges,
     standing: standing(user.points),
     negative_badges: user.negative_badges ?? [],
+    custom_badges: user.custom_badges ?? [],
     is_banned: user.is_banned,
     ban_expires_at: user.ban_expires_at,
     ban_reason: user.ban_reason,
@@ -147,6 +148,9 @@ export async function unbanUser(admin, userId) {
  * Suspended → permanent ban. Warning is informational.
  */
 export async function issueNegativeBadge(admin, userId, key, reason) {
+  if (String(admin._id) === String(userId)) {
+    throw ApiError.badRequest('You cannot issue a moderation badge to yourself');
+  }
   const def = Object.values(NEGATIVE_BADGES).find((b) => b.key === key);
   if (!def) throw ApiError.badRequest('Invalid negative badge');
 
@@ -185,5 +189,88 @@ export async function issueNegativeBadge(admin, userId, key, reason) {
     link: `/users/${user._id}`,
   });
 
+  return { ok: true };
+}
+
+/** Admin: remove an admin-issued negative badge from a user. */
+export async function revokeNegativeBadge(admin, userId, key) {
+  const user = await User.findById(userId);
+  if (!user || user.is_deleted) throw ApiError.notFound('User not found');
+
+  const before = user.negative_badges.length;
+  user.negative_badges = user.negative_badges.filter((b) => b.key !== key);
+  if (user.negative_badges.length === before) throw ApiError.notFound('Badge not found on this user');
+
+  // Lifting "restricted" clears the approval gate it imposed.
+  if (key === NEGATIVE_BADGES.RESTRICTED.key) user.requires_approval = false;
+  await user.save();
+
+  await AuditLog.create({
+    action: 'user.revoke_negative_badge',
+    entity_type: 'user',
+    entity_id: user._id,
+    performed_by: admin._id,
+    details: { key },
+  });
+  return { ok: true };
+}
+
+/** Admin: create + assign a custom badge (free-form label/icon) to a user. */
+export async function awardCustomBadge(admin, userId, { label, icon, reason } = {}) {
+  const cleanLabel = String(label ?? '').trim().slice(0, 40);
+  if (!cleanLabel) throw ApiError.badRequest('A badge label is required');
+  const key = cleanLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  if (!key) throw ApiError.badRequest('A badge label is required');
+
+  const user = await User.findById(userId);
+  if (!user || user.is_deleted) throw ApiError.notFound('User not found');
+  if (user.custom_badges.some((b) => b.key === key)) {
+    throw ApiError.conflict('This user already has that badge');
+  }
+
+  const badge = {
+    key,
+    label: cleanLabel,
+    icon: String(icon ?? '').trim().slice(0, 8) || '🏅',
+    reason: String(reason ?? '').slice(0, 200),
+    issued_by: admin._id,
+  };
+  user.custom_badges.push(badge);
+  await user.save();
+
+  await AuditLog.create({
+    action: 'user.award_custom_badge',
+    entity_type: 'user',
+    entity_id: user._id,
+    performed_by: admin._id,
+    details: { key, label: cleanLabel },
+  });
+  await notify({
+    recipientId: user._id,
+    type: NOTIFICATION_TYPE.BADGE,
+    title: `You earned the ${badge.icon} ${badge.label} badge`,
+    message: badge.reason,
+    link: `/users/${user._id}`,
+  });
+  return { ok: true, badge };
+}
+
+/** Admin: remove a custom badge from a user. */
+export async function revokeCustomBadge(admin, userId, key) {
+  const user = await User.findById(userId);
+  if (!user || user.is_deleted) throw ApiError.notFound('User not found');
+
+  const before = user.custom_badges.length;
+  user.custom_badges = user.custom_badges.filter((b) => b.key !== key);
+  if (user.custom_badges.length === before) throw ApiError.notFound('Badge not found on this user');
+  await user.save();
+
+  await AuditLog.create({
+    action: 'user.revoke_custom_badge',
+    entity_type: 'user',
+    entity_id: user._id,
+    performed_by: admin._id,
+    details: { key },
+  });
   return { ok: true };
 }

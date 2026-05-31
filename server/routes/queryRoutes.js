@@ -17,6 +17,9 @@ router.post('/check-grammar', auth, aiLimiter, ctrl.checkGrammar);
 // The current user's saved questions (must precede /:id).
 router.get('/bookmarks', auth, ctrl.bookmarks);
 
+// Distinct categories for filter dropdowns (must precede /:id).
+router.get('/categories', ctrl.categories);
+
 router.get('/:id', optionalAuth, ctrl.detail);
 
 // Writes require a logged-in, non-banned user.
