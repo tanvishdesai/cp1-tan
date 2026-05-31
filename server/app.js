@@ -14,6 +14,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export function createApp() {
   const app = express();
 
+  // Behind a reverse proxy/tunnel, derive the real client IP from X-Forwarded-For
+  // (required so express-rate-limit keys per-user and doesn't throw on the header).
+  if (config.trustProxy !== false) app.set('trust proxy', config.trustProxy);
+
   // Baseline security headers. (For production, `helmet` is the recommended
   // upgrade — this hand-rolled set keeps the MVP dependency-free while covering
   // the headers that matter for an API + user-uploaded static files.)

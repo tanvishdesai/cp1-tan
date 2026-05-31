@@ -53,4 +53,19 @@ export const config = Object.freeze({
   },
 
   clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
+
+  // Trust a reverse proxy / tunnel in front of us (Cloudflare, nginx, the Vite
+  // dev proxy) so req.ip and express-rate-limit read the real client from
+  // X-Forwarded-For instead of throwing on it. A number = hops to trust; 'true'
+  // trusts all; unset = off (direct connections only).
+  trustProxy: (() => {
+    const v = process.env.TRUST_PROXY;
+    if (!v) return false;
+    const n = Number(v);
+    return Number.isNaN(n) ? v === 'true' : n;
+  })(),
+
+  // Escape hatch to disable rate limiting — e.g. a shared-IP demo behind a tunnel
+  // where every visitor would otherwise collapse into a single bucket.
+  rateLimitDisabled: process.env.DISABLE_RATE_LIMIT === 'true',
 });

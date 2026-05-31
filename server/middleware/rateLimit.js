@@ -6,7 +6,10 @@ import { config } from '../config/env.js';
 export function makeLimiter({ windowMs = 15 * 60 * 1000, max = 100, message } = {}) {
   return rateLimit({
     windowMs,
-    max: config.isTest ? 1_000_000 : max,
+    max,
+    // Skip entirely in tests (determinism) and when explicitly disabled (shared-IP
+    // demos). Skipping also bypasses the X-Forwarded-For key validation.
+    skip: () => config.isTest || config.rateLimitDisabled,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: message ?? 'Too many requests, please try again later.' },
