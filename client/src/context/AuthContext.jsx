@@ -52,7 +52,20 @@ export function AuthProvider({ children }) {
     setUser((prev) => (prev ? { ...prev, ...patch } : prev));
   }, []);
 
-  const value = { user, loading, login, register, logout, updateUser, isAdmin: user?.role === 'admin' };
+  const isAdmin = user?.role === 'admin';
+  const isModerator = Boolean(user?.is_moderator);
+  const value = {
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    updateUser,
+    isAdmin,
+    isModerator,
+    // Can perform moderation actions (delete queries / regulate answers).
+    canModerate: isAdmin || isModerator,
+  };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

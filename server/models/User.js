@@ -34,6 +34,11 @@ const userSchema = new mongoose.Schema(
     password_hash: { type: String, required: true, select: false },
     role: { type: String, enum: Object.values(ROLES), default: ROLES.USER },
 
+    // Moderator capability — admin-granted (independent of badge tier). A
+    // moderator can delete queries and regulate answers.
+    is_moderator: { type: Boolean, default: false },
+    moderator_requested: { type: Boolean, default: false },
+
     points: { type: Number, default: 0 },
     badges: { type: [String], default: [] }, // positive badge keys
     negative_badges: { type: [negativeBadgeSchema], default: [] },

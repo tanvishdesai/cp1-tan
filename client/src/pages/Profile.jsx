@@ -49,6 +49,8 @@ export default function Profile() {
             {[profile.standing.tier.icon, profile.standing.tier.label].filter(Boolean).join(' ')}
           </span>
         )}
+        {profile.is_admin && <span className="chip role-chip">Admin</span>}
+        {profile.is_moderator && <span className="chip role-chip">Moderator</span>}
       </div>
       {profile.standing && !profile.standing.is_max && (
         <p className="muted small">

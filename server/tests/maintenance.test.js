@@ -75,7 +75,7 @@ describe('maintenance jobs', () => {
       name: 'Stale Badges',
       email: 'stale@example.com',
       password_hash: 'x',
-      points: 200,
+      points: 150, // helper (30) + contributor (100), below expert (200)
       badges: [],
     });
     const res = await recalcAllBadges();

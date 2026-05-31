@@ -45,10 +45,10 @@ export const FAQ_SOURCE = Object.freeze({
 
 // Reputation: positive badges (tiered) keyed by points threshold.
 export const POSITIVE_BADGES = Object.freeze([
-  { key: 'helper', label: 'Helper', icon: '🥉', threshold: 50 },
-  { key: 'contributor', label: 'Contributor', icon: '🥈', threshold: 150 },
-  { key: 'expert', label: 'Expert', icon: '🥇', threshold: 500 },
-  { key: 'legend', label: 'Legend', icon: '🏆', threshold: 1000 },
+  { key: 'helper', label: 'Helper', icon: '🥉', threshold: 30 },
+  { key: 'contributor', label: 'Contributor', icon: '🥈', threshold: 100 },
+  { key: 'expert', label: 'Expert', icon: '🥇', threshold: 200 },
+  { key: 'legend', label: 'Legend', icon: '🏆', threshold: 300 },
 ]);
 
 // The badge key a member must hold to flag a question for admin attention.

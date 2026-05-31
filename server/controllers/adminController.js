@@ -29,6 +29,10 @@ export const revokeNegativeBadge = asyncHandler(async (req, res) => {
   res.json(await userService.revokeNegativeBadge(req.user, req.params.id, req.params.key));
 });
 
+export const setModerator = asyncHandler(async (req, res) => {
+  res.json(await userService.setModerator(req.user, req.params.id, req.body?.is_moderator));
+});
+
 export const awardCustomBadge = asyncHandler(async (req, res) => {
   const result = await userService.awardCustomBadge(req.user, req.params.id, {
     label: req.body?.label,

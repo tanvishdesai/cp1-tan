@@ -17,6 +17,7 @@ router.delete('/users/:id/badge/:key', ctrl.revokeNegativeBadge);
 router.post('/users/:id/custom-badge', ctrl.awardCustomBadge);
 router.delete('/users/:id/custom-badge/:key', ctrl.revokeCustomBadge);
 router.post('/users/:id/role', ctrl.setRole);
+router.post('/users/:id/moderator', ctrl.setModerator);
 
 // Moderation queue.
 router.get('/moderation', ctrl.listModeration);

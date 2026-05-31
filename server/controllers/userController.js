@@ -21,3 +21,7 @@ export const activity = asyncHandler(async (req, res) => {
   const result = await userService.getActivity(req.user, req.query.limit);
   res.json(result);
 });
+
+export const requestModerator = asyncHandler(async (req, res) => {
+  res.json(await userService.requestModerator(req.user));
+});

@@ -79,16 +79,18 @@ Reputation is earned, not given — and it drives the badge system.
 
 | Badge | Unlocks at |
 |---|---|
-| 🥉 **Helper** | 50 pts |
-| 🥈 **Contributor** | 150 pts |
-| 🥇 **Expert** | 500 pts |
-| 🏆 **Legend** | 1000 pts |
+| 🥉 **Helper** | 30 pts |
+| 🥈 **Contributor** | 100 pts |
+| 🥇 **Expert** | 200 pts |
+| 🏆 **Legend** | 300 pts |
 
 Every profile shows the **full badge catalog** (earned vs. locked, with the points needed) plus a reputation tier and progress toward the next tier. A **leaderboard** ranks the top contributors.
 
 **Admin-controlled badges** (see below) layer on top of the automatic ones:
 - **Custom badges** — admins can *create and award* a free-form badge (name + icon + reason) and *revoke* it later.
 - **Moderation flags** — ⚠️ Warning, 🚫 Restricted, ☠️ Suspended — issued and revoked by admins to govern behavior. Restriction gates a user behind post-approval; suspension bans them.
+
+**Becoming a moderator** — when a member reaches the **Expert** tier they're notified that they can **apply to moderate**, and can send a request from their Settings. **Admins decide** who actually becomes a moderator (and can grant or revoke it for anyone, regardless of badge tier). A **moderator** can **delete queries and regulate answers** (remove answers/comments), without the full admin toolkit.
 
 ---
 
@@ -112,6 +114,7 @@ Admins get a dedicated dashboard and inline controls across the app — moderati
 
 **People & reputation**
 - **Bans** (timed or permanent) and **role management** (promote/demote admins).
+- **Moderators** — grant or revoke moderator access for any user (independent of badge tier); pending Expert requests are flagged in the user list.
 - **Full badge control** — award custom badges, and revoke custom or moderation badges.
 - **Self-moderation guard** — admins cannot ban, suspend, or badge **their own** account; the controls are hidden on your own profile and disabled on your own row.
 

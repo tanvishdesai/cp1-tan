@@ -3,10 +3,10 @@
 // and "points to next tier" on the dashboard. Milestone 14 will formalize this
 // in the profile API; until then it's derived from points client-side.
 export const POSITIVE_BADGES = [
-  { key: 'helper', label: 'Helper', icon: '🥉', threshold: 50 },
-  { key: 'contributor', label: 'Contributor', icon: '🥈', threshold: 150 },
-  { key: 'expert', label: 'Expert', icon: '🥇', threshold: 500 },
-  { key: 'legend', label: 'Legend', icon: '🏆', threshold: 1000 },
+  { key: 'helper', label: 'Helper', icon: '🥉', threshold: 30 },
+  { key: 'contributor', label: 'Contributor', icon: '🥈', threshold: 100 },
+  { key: 'expert', label: 'Expert', icon: '🥇', threshold: 200 },
+  { key: 'legend', label: 'Legend', icon: '🏆', threshold: 300 },
 ];
 
 // Ordered tier ladder, including the entry tier below the first badge.

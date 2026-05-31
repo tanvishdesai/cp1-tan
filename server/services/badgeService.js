@@ -63,6 +63,18 @@ export async function awardPoints(userId, delta) {
       link: `/users/${user._id}`,
     });
   }
+
+  // Reaching Expert makes a member eligible to moderate — invite them to apply
+  // (the admin still decides who actually becomes a moderator).
+  if (newly.some((b) => b.key === 'expert') && !user.is_moderator) {
+    await notify({
+      recipientId: user._id,
+      type: NOTIFICATION_TYPE.SYSTEM,
+      title: 'You can apply to become a moderator',
+      message: 'As an Expert you can request moderator access from your Settings — an admin will review it.',
+      link: '/settings',
+    });
+  }
   return user;
 }
 

@@ -371,7 +371,8 @@ export async function deleteQuery(user, id) {
   if (!doc || doc.is_deleted) throw ApiError.notFound('Query not found');
 
   const isOwner = String(doc.author_id) === String(user._id);
-  if (!isOwner && user.role !== ROLES.ADMIN) {
+  const canModerate = user.role === ROLES.ADMIN || user.is_moderator;
+  if (!isOwner && !canModerate) {
     throw ApiError.forbidden('You can only delete your own query');
   }
 

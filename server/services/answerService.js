@@ -164,7 +164,8 @@ export async function addComment(user, answerId, body) {
 export async function deleteComment(user, commentId) {
   const comment = await Comment.findOne({ _id: commentId, is_deleted: false });
   if (!comment) throw ApiError.notFound('Comment not found');
-  if (String(comment.author_id) !== String(user._id) && user.role !== ROLES.ADMIN) {
+  const canModerate = user.role === ROLES.ADMIN || user.is_moderator;
+  if (String(comment.author_id) !== String(user._id) && !canModerate) {
     throw ApiError.forbidden('You can only delete your own comment');
   }
   comment.is_deleted = true;
@@ -342,7 +343,8 @@ export async function deleteAnswer(user, answerId) {
   const answer = await Answer.findOne({ _id: answerId, is_deleted: false });
   if (!answer) throw ApiError.notFound('Answer not found');
   const isOwner = String(answer.author_id) === String(user._id);
-  if (!isOwner && user.role !== ROLES.ADMIN) {
+  const canModerate = user.role === ROLES.ADMIN || user.is_moderator;
+  if (!isOwner && !canModerate) {
     throw ApiError.forbidden('You can only delete your own answer');
   }
   answer.is_deleted = true;

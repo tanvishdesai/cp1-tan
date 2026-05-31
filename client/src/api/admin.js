@@ -20,6 +20,11 @@ export async function setRole(id, role) {
   return data;
 }
 
+export async function setModerator(id, isModerator) {
+  const { data } = await api.post(`/admin/users/${id}/moderator`, { is_moderator: isModerator });
+  return data;
+}
+
 export async function banUser(id, { hours, reason }) {
   const { data } = await api.post(`/admin/users/${id}/ban`, { hours, reason });
   return data;

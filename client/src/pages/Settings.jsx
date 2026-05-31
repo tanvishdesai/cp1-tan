@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { updateMe } from '../api/users.js';
+import { updateMe, requestModerator } from '../api/users.js';
 
 const DEFAULT_PREFS = { answers: true, mentions: true, system: true };
 
@@ -24,6 +24,17 @@ export default function Settings() {
   }
 
   const toggle = (key) => setPrefs((p) => ({ ...p, [key]: !p[key] }));
+
+  const isExpert = (user.badges ?? []).includes('expert');
+  const onRequestModerator = async () => {
+    try {
+      await requestModerator();
+      updateUser({ moderator_requested: true });
+      setStatus({ ok: true, msg: 'Moderator request sent — an admin will review it.' });
+    } catch (err) {
+      setStatus({ ok: false, msg: err.response?.data?.error ?? 'Could not send the request.' });
+    }
+  };
 
   const onSave = async (e) => {
     e.preventDefault();
@@ -71,6 +82,28 @@ export default function Settings() {
           {busy ? 'Saving…' : 'Save changes'}
         </button>
       </form>
+
+      <section className="card" style={{ maxWidth: 520, marginTop: '1.5rem' }}>
+        <h2>Moderator</h2>
+        {user.is_moderator ? (
+          <p className="muted">You are a moderator — you can delete queries and regulate answers.</p>
+        ) : isExpert ? (
+          user.moderator_requested ? (
+            <p className="muted">Your moderator request is pending an admin&apos;s review.</p>
+          ) : (
+            <>
+              <p className="muted">
+                As an Expert, you can apply to help moderate the community. An admin reviews every request.
+              </p>
+              <button className="btn-secondary" onClick={onRequestModerator}>
+                Request to become a moderator
+              </button>
+            </>
+          )
+        ) : (
+          <p className="muted">Reach the Expert tier (200 points) to apply to become a moderator.</p>
+        )}
+      </section>
     </div>
   );
 }

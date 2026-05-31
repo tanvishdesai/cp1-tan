@@ -41,11 +41,11 @@ describe('positive badges', () => {
   test('awardPoints unlocks tiered badges and notifies', async () => {
     const { user } = await makeUser();
 
-    await awardPoints(user.id, 49);
+    await awardPoints(user.id, 29);
     let dbUser = await User.findById(user.id);
-    expect(dbUser.badges).toEqual([]); // below the first threshold
+    expect(dbUser.badges).toEqual([]); // below the first threshold (30)
 
-    await awardPoints(user.id, 101); // total 150 → helper + contributor
+    await awardPoints(user.id, 101); // total 130 → helper (30) + contributor (100)
     dbUser = await User.findById(user.id);
     expect(dbUser.badges).toEqual(['helper', 'contributor']);
 

@@ -63,7 +63,7 @@ export async function listUsers(opts = {}) {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('name email role points badges negative_badges is_banned ban_expires_at requires_approval createdAt')
+      .select('name email role is_moderator moderator_requested points badges negative_badges is_banned ban_expires_at requires_approval createdAt')
       .lean(),
     User.countDocuments(filter),
   ]);

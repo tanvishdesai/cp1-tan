@@ -20,7 +20,7 @@ import { relativeTime, initials } from '../lib/time.js';
 export default function QueryDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, canModerate } = useAuth();
   const [query, setQuery] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [error, setError] = useState(null);
@@ -126,9 +126,9 @@ export default function QueryDetail() {
               Edit
             </Link>
           )}
-          {(query.is_owner || isAdmin) && (
+          {(query.is_owner || canModerate) && (
             <button className="btn-link danger" onClick={onDeleteQuery}>
-              Delete{!query.is_owner && isAdmin ? ' (admin)' : ''}
+              Delete{!query.is_owner && canModerate ? ' (mod)' : ''}
             </button>
           )}
           {user && !query.is_owner && (
@@ -254,7 +254,7 @@ export default function QueryDetail() {
             key={a.id}
             answer={a}
             canManage={query.is_owner || isAdmin}
-            isAdmin={isAdmin}
+            canModerate={canModerate}
             canComment={query.is_owner || a.is_owner || isAdmin}
             onChange={loadAll}
           />
@@ -270,9 +270,9 @@ export default function QueryDetail() {
   );
 }
 
-function AnswerCard({ answer, canManage, isAdmin, canComment, onChange }) {
+function AnswerCard({ answer, canManage, canModerate, canComment, onChange }) {
   const [busy, setBusy] = useState(false);
-  const canDelete = answer.is_owner || isAdmin;
+  const canDelete = answer.is_owner || canModerate;
 
   const onToggleHelpful = async () => {
     setBusy(true);
@@ -319,7 +319,7 @@ function AnswerCard({ answer, canManage, isAdmin, canComment, onChange }) {
           )}
           {canDelete && (
             <button className="btn-link danger" onClick={onDelete}>
-              Delete{!answer.is_owner && isAdmin ? ' (admin)' : ''}
+              Delete{!answer.is_owner && canModerate ? ' (mod)' : ''}
             </button>
           )}
           {!answer.is_owner && (

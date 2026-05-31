@@ -134,7 +134,7 @@ describe('expert flags a question for admin attention', () => {
   test('expert can flag, a non-expert cannot, and admin sees it in the queue', async () => {
     const asker = await makeUser('Asker');
     const expert = await makeUser('Expert');
-    await awardPoints(expert.user.id, 500); // unlocks the Expert badge
+    await awardPoints(expert.user.id, 200); // unlocks the Expert badge
     const admin = await makeAdmin();
     const query = await createQuery(asker.token);
 
@@ -176,6 +176,52 @@ describe('"user found helpful" endorsement', () => {
 
     const list = await request(app).get(`/api/queries/${query.id}/answers`);
     expect(list.body.answers[0].is_helpful).toBe(true);
+  });
+});
+
+describe('moderator role', () => {
+  test('admin grants moderator; the moderator can delete any query; revoke removes it', async () => {
+    const admin = await makeAdmin();
+    const asker = await makeUser('Asker');
+    const mod = await makeUser('Mod');
+    const query = await createQuery(asker.token);
+
+    // A plain user cannot delete someone else's query.
+    const denied = await authed(request(app).delete(`/api/queries/${query.id}`), mod.token).send();
+    expect(denied.status).toBe(403);
+
+    // Admin grants moderator.
+    const grant = await authed(
+      request(app).post(`/api/admin/users/${mod.user.id}/moderator`),
+      admin.token,
+    ).send({ is_moderator: true });
+    expect(grant.status).toBe(200);
+    expect(grant.body.is_moderator).toBe(true);
+
+    // Now the moderator can delete the query.
+    const del = await authed(request(app).delete(`/api/queries/${query.id}`), mod.token).send();
+    expect(del.status).toBe(200);
+
+    // Revoking removes the power.
+    await authed(request(app).post(`/api/admin/users/${mod.user.id}/moderator`), admin.token).send({
+      is_moderator: false,
+    });
+    const q2 = await createQuery(asker.token);
+    const denied2 = await authed(request(app).delete(`/api/queries/${q2.id}`), mod.token).send();
+    expect(denied2.status).toBe(403);
+  });
+
+  test('only Expert members can request to be a moderator', async () => {
+    const newbie = await makeUser('Newbie');
+    const expert = await makeUser('Expert');
+    await awardPoints(expert.user.id, 200);
+
+    const denied = await authed(request(app).post('/api/users/me/request-moderator'), newbie.token).send();
+    expect(denied.status).toBe(403);
+
+    const ok = await authed(request(app).post('/api/users/me/request-moderator'), expert.token).send();
+    expect(ok.status).toBe(200);
+    expect(ok.body.moderator_requested).toBe(true);
   });
 });
 

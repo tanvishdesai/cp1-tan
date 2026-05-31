@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { listUsers, setRole, banUser, unbanUser } from '../../api/admin.js';
+import { listUsers, setRole, banUser, unbanUser, setModerator } from '../../api/admin.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function AdminUsers() {
@@ -53,6 +53,7 @@ export default function AdminUsers() {
             <th>Name</th>
             <th>Email</th>
             <th>Role</th>
+            <th>Moderator</th>
             <th>Points</th>
             <th>Status</th>
             <th>Actions</th>
@@ -66,6 +67,15 @@ export default function AdminUsers() {
               </td>
               <td className="small">{u.email}</td>
               <td>{u.role}</td>
+              <td>
+                {u.is_moderator ? (
+                  <span className="badge">moderator</span>
+                ) : u.moderator_requested ? (
+                  <span className="badge flag">requested</span>
+                ) : (
+                  <span className="muted small">—</span>
+                )}
+              </td>
               <td>{u.points}</td>
               <td>{u.is_banned ? <span className="badge flag">banned</span> : 'active'}</td>
               <td>
@@ -79,6 +89,13 @@ export default function AdminUsers() {
                       onClick={() => act(() => setRole(u.id, u.role === 'admin' ? 'user' : 'admin'))}
                     >
                       {u.role === 'admin' ? 'Make user' : 'Make admin'}
+                    </button>
+                    <button
+                      className="btn-link"
+                      disabled={busy}
+                      onClick={() => act(() => setModerator(u.id, !u.is_moderator))}
+                    >
+                      {u.is_moderator ? 'Remove moderator' : 'Make moderator'}
                     </button>
                     {u.is_banned ? (
                       <button className="btn-link" disabled={busy} onClick={() => act(() => unbanUser(u.id))}>

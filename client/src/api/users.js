@@ -17,6 +17,12 @@ export async function getActivity(limit = 8) {
   return data.items;
 }
 
+// Request to become a moderator (Expert tier). Returns { moderator_requested }.
+export async function requestModerator() {
+  const { data } = await api.post('/users/me/request-moderator');
+  return data;
+}
+
 export async function banUser(id, { hours, reason }) {
   const { data } = await api.post(`/admin/users/${id}/ban`, { hours, reason });
   return data;

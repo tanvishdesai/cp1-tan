@@ -11,7 +11,7 @@ import { POSITIVE_BADGES, NEGATIVE_BADGES, NOTIFICATION_TYPE } from '../config/c
 /** Public profile: reputation, badges, governance status, and activity counts. */
 export async function getProfile(userId) {
   const user = await User.findOne({ _id: userId, is_deleted: false })
-    .select('name points badges negative_badges custom_badges is_banned ban_expires_at ban_reason requires_approval createdAt')
+    .select('name role is_moderator points badges negative_badges custom_badges is_banned ban_expires_at ban_reason requires_approval createdAt')
     .lean();
   if (!user) throw ApiError.notFound('User not found');
 
@@ -33,6 +33,8 @@ export async function getProfile(userId) {
     standing: standing(user.points),
     negative_badges: user.negative_badges ?? [],
     custom_badges: user.custom_badges ?? [],
+    is_moderator: Boolean(user.is_moderator),
+    is_admin: user.role === 'admin',
     is_banned: user.is_banned,
     ban_expires_at: user.ban_expires_at,
     ban_reason: user.ban_reason,
@@ -190,6 +192,47 @@ export async function issueNegativeBadge(admin, userId, key, reason) {
   });
 
   return { ok: true };
+}
+
+/** A member (Expert tier) asks to become a moderator; an admin reviews it. */
+export async function requestModerator(user) {
+  const fresh = await User.findById(user._id);
+  if (!fresh || fresh.is_deleted) throw ApiError.notFound('User not found');
+  if (fresh.is_moderator) throw ApiError.badRequest('You are already a moderator');
+  if (!(fresh.badges ?? []).includes('expert')) {
+    throw ApiError.forbidden('Only Expert-level members can request to be a moderator');
+  }
+  fresh.moderator_requested = true;
+  await fresh.save();
+  return { ok: true, moderator_requested: true };
+}
+
+/**
+ * Admin: grant or revoke moderator access for a user — independent of their
+ * badge tier. Granting clears any pending request.
+ */
+export async function setModerator(admin, userId, value) {
+  const user = await User.findById(userId);
+  if (!user || user.is_deleted) throw ApiError.notFound('User not found');
+
+  user.is_moderator = Boolean(value);
+  if (user.is_moderator) user.moderator_requested = false;
+  await user.save();
+
+  await AuditLog.create({
+    action: user.is_moderator ? 'user.grant_moderator' : 'user.revoke_moderator',
+    entity_type: 'user',
+    entity_id: user._id,
+    performed_by: admin._id,
+    details: {},
+  });
+  await notify({
+    recipientId: user._id,
+    type: NOTIFICATION_TYPE.SYSTEM,
+    title: user.is_moderator ? 'You are now a moderator' : 'Your moderator access was removed',
+    link: `/users/${user._id}`,
+  });
+  return { ok: true, is_moderator: user.is_moderator };
 }
 
 /** Admin: remove an admin-issued negative badge from a user. */
