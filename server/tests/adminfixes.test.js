@@ -228,21 +228,21 @@ describe('moderator role', () => {
 describe('category endpoints', () => {
   test('lists distinct query categories', async () => {
     const asker = await makeUser('Asker');
-    await createQuery(asker.token, { category: 'databases' });
+    await createQuery(asker.token, { category: 'technical' });
 
     const res = await request(app).get('/api/queries/categories');
     expect(res.status).toBe(200);
-    expect(res.body.categories).toEqual(expect.arrayContaining(['databases']));
+    expect(res.body.categories).toEqual(expect.arrayContaining(['technical']));
   });
 
   test('admin sees queries grouped by category', async () => {
     const asker = await makeUser('Asker');
     const admin = await makeAdmin();
-    await createQuery(asker.token, { category: 'databases' });
+    await createQuery(asker.token, { category: 'technical' });
 
     const res = await authed(request(app).get('/api/admin/queries/by-category'), admin.token);
     expect(res.status).toBe(200);
-    const row = res.body.categories.find((c) => c.category === 'databases');
+    const row = res.body.categories.find((c) => c.category === 'technical');
     expect(row).toBeTruthy();
     expect(row.total).toBe(1);
     expect(row.open).toBe(1);

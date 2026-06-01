@@ -1,19 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createQuery, checkGrammar } from '../api/queries.js';
+import { getTaxonomy } from '../api/taxonomy.js';
+
+// The built-in tag a user may pick when no curated tag fits.
+const OTHERS_TAG = { slug: 'others', name: 'Others (no relevant tag)' };
 
 const EMPTY = {
   title: '',
   body: '',
-  category: 'general',
-  tags: '',
+  category: '',
   contact_email: '',
-  is_anonymous: false,
+  joining_date: '',
 };
 
 export default function AskQuery() {
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY);
+  const [selectedTags, setSelectedTags] = useState([]); // tag slugs
+  const [taxonomy, setTaxonomy] = useState({ categories: [], tags: [] });
   const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -24,9 +29,28 @@ export default function AskQuery() {
   const [checking, setChecking] = useState(false);
   const [originalBody, setOriginalBody] = useState(null); // preserved if corrected
 
+  // Load the admin-curated categories + tags the asker may choose from.
+  useEffect(() => {
+    (async () => {
+      try {
+        const tax = await getTaxonomy();
+        setTaxonomy(tax);
+        setForm((f) => ({ ...f, category: f.category || tax.categories[0]?.slug || '' }));
+      } catch {
+        setError('Could not load categories. Please refresh and try again.');
+      }
+    })();
+  }, []);
+
   const onChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((f) => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+  };
+
+  const toggleTag = (slug) => {
+    setSelectedTags((prev) =>
+      prev.includes(slug) ? prev.filter((t) => t !== slug) : [...prev, slug],
+    );
   };
 
   const runGrammarCheck = async () => {
@@ -56,7 +80,7 @@ export default function AskQuery() {
     try {
       const fields = {
         ...form,
-        is_anonymous: form.is_anonymous ? 'true' : 'false',
+        tags: selectedTags.join(','),
         post_anyway: postAnyway ? 'true' : 'false',
       };
       if (originalBody && originalBody !== form.body) fields.original_body = originalBody;
@@ -121,19 +145,60 @@ export default function AskQuery() {
 
         <div className="grid-2">
           <label>
-            Category
-            <input name="category" value={form.category} onChange={onChange} />
+            Contact email
+            <input
+              name="contact_email"
+              type="email"
+              value={form.contact_email}
+              onChange={onChange}
+              required
+              placeholder="you@example.com"
+            />
           </label>
           <label>
-            Tags (comma-separated)
-            <input name="tags" value={form.tags} onChange={onChange} placeholder="mongodb, auth" />
+            Joining date
+            <input
+              name="joining_date"
+              type="date"
+              value={form.joining_date}
+              onChange={onChange}
+              required
+            />
           </label>
         </div>
 
         <label>
-          Contact email (optional — extra context for moderators)
-          <input name="contact_email" type="email" value={form.contact_email} onChange={onChange} />
+          Category
+          <select name="category" value={form.category} onChange={onChange} required>
+            <option value="" disabled>
+              Select a category…
+            </option>
+            {taxonomy.categories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </label>
+
+        <fieldset className="tag-picker">
+          <legend>Tags</legend>
+          <p className="hint">
+            Pick from the available tags. If none fit, choose “Others”. Custom tags aren’t allowed.
+          </p>
+          <div className="tag-options">
+            {[...taxonomy.tags, OTHERS_TAG].map((t) => (
+              <label key={t.slug} className="checkbox tag-option">
+                <input
+                  type="checkbox"
+                  checked={selectedTags.includes(t.slug)}
+                  onChange={() => toggleTag(t.slug)}
+                />
+                {t.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <label>
           Screenshots (optional, up to 4 images)
@@ -143,16 +208,6 @@ export default function AskQuery() {
             multiple
             onChange={(e) => setFiles(e.target.files)}
           />
-        </label>
-
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            name="is_anonymous"
-            checked={form.is_anonymous}
-            onChange={onChange}
-          />
-          Post anonymously
         </label>
 
         <button className="btn-primary" disabled={busy}>

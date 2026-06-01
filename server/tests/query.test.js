@@ -32,8 +32,10 @@ const authed = (req, token) => req.set('Authorization', `Bearer ${token}`);
 const goodQuery = {
   title: 'How do I configure the database connection?',
   body: 'I am trying to connect my Express server to MongoDB but the connection keeps timing out. What configuration should I use for production?',
-  category: 'backend',
-  tags: 'mongodb, express',
+  category: 'technical',
+  tags: 'urgent, question',
+  contact_email: 'asker@example.com',
+  joining_date: '2024-01-15',
 };
 
 describe('query intake', () => {
@@ -42,7 +44,7 @@ describe('query intake', () => {
     const res = await authed(request(app).post('/api/queries'), token).send(goodQuery);
     expect(res.status).toBe(201);
     expect(res.body.query.title).toBe(goodQuery.title);
-    expect(res.body.query.tags).toEqual(['mongodb', 'express']);
+    expect(res.body.query.tags).toEqual(['urgent', 'question']);
     expect(res.body.query.is_owner).toBe(true);
     expect(res.body.query.embedding).toBeUndefined(); // never leaked
   });
@@ -99,15 +101,17 @@ describe('query intake', () => {
     expect(queued).toHaveLength(1);
   });
 
-  test('lists queries and hides the author when anonymous', async () => {
-    const { token } = await makeUser();
+  test('always attributes the author — anonymous posting is disabled', async () => {
+    const { token, user } = await makeUser();
+    // Even if a client tries to force anonymity, the author is still attributed.
     await authed(request(app).post('/api/queries'), token).send({ ...goodQuery, is_anonymous: true });
 
     const res = await request(app).get('/api/queries');
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(1);
-    expect(res.body.items[0].author.name).toBe('Anonymous');
-    expect(res.body.items[0].author.id).toBeUndefined();
+    expect(res.body.items[0].is_anonymous).toBe(false);
+    expect(res.body.items[0].author.name).toBe(user.name);
+    expect(res.body.items[0].author.id).toBeDefined();
   });
 
   test('author can soft-delete; others cannot', async () => {
@@ -124,6 +128,40 @@ describe('query intake', () => {
 
     const gone = await request(app).get(`/api/queries/${id}`);
     expect(gone.status).toBe(404);
+  });
+
+  test('rejects a category not in the admin taxonomy', async () => {
+    const { token } = await makeUser();
+    const res = await authed(request(app).post('/api/queries'), token).send({
+      ...goodQuery,
+      category: 'totally-made-up',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test('rejects a self-invented tag but allows the built-in "others" tag', async () => {
+    const { token } = await makeUser();
+
+    const bad = await authed(request(app).post('/api/queries'), token).send({
+      ...goodQuery,
+      tags: 'my-custom-tag',
+    });
+    expect(bad.status).toBe(400);
+
+    const ok = await authed(request(app).post('/api/queries'), token).send({
+      ...goodQuery,
+      tags: 'others',
+    });
+    expect(ok.status).toBe(201);
+    expect(ok.body.query.tags).toEqual(['others']);
+  });
+
+  test('captures the asker joining date and contact email', async () => {
+    const { token } = await makeUser();
+    const res = await authed(request(app).post('/api/queries'), token).send(goodQuery);
+    expect(res.status).toBe(201);
+    expect(res.body.query.contact_email).toBe('asker@example.com');
+    expect(new Date(res.body.query.joining_date).toISOString().slice(0, 10)).toBe('2024-01-15');
   });
 
   test('grammar check returns a tidied suggestion', async () => {

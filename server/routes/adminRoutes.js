@@ -31,6 +31,10 @@ router.get('/queries/attention', ctrl.attentionQueue);
 router.post('/queries/:id/clear-attention', ctrl.clearAttention);
 router.post('/queries/merge', ctrl.mergeQueries);
 
+// Taxonomy: curate the categories + tags users may pick from.
+router.post('/taxonomy', ctrl.createTaxonomy);
+router.delete('/taxonomy/:id', ctrl.deleteTaxonomy);
+
 // Audit log.
 router.get('/audit', ctrl.audit);
 

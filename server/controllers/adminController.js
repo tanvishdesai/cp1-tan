@@ -1,5 +1,6 @@
 import * as userService from '../services/userService.js';
 import * as adminService from '../services/adminService.js';
+import * as taxonomyService from '../services/taxonomyService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const banUser = asyncHandler(async (req, res) => {
@@ -98,4 +99,13 @@ export const queryClusters = asyncHandler(async (_req, res) => {
 
 export const audit = asyncHandler(async (req, res) => {
   res.json(await adminService.listAudit(req.query));
+});
+
+// Taxonomy management (admin-curated categories + tags).
+export const createTaxonomy = asyncHandler(async (req, res) => {
+  res.status(201).json(await taxonomyService.createTerm(req.user, req.body?.kind, req.body?.name));
+});
+
+export const deleteTaxonomy = asyncHandler(async (req, res) => {
+  res.json(await taxonomyService.deleteTerm(req.user, req.params.id));
 });

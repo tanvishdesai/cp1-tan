@@ -47,8 +47,8 @@ export default function AdminAttention() {
       <header className="overview-head">
         <h2>Needs Admin Attention</h2>
         <p className="muted">
-          Questions escalated by Expert members, grouped by category and ordered by posting date
-          then the asker&apos;s joining date.
+          Questions escalated by Expert members, grouped by category. The queue lists each asker by
+          their email id — click an email to open the question.
         </p>
       </header>
 
@@ -61,46 +61,19 @@ export default function AdminAttention() {
               <h3>{g.category}</h3>
               <span className="chip">{g.rows.length}</span>
             </div>
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Question</th>
-                  <th>Asked by</th>
-                  <th>Joined</th>
-                  <th>Posted</th>
-                  <th>Status</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {g.rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      <Link to={`/queries/${r.id}`}>{r.title}</Link>
-                    </td>
-                    <td>
-                      {r.author?.id ? (
-                        <Link to={`/users/${r.author.id}`}>{r.author.name}</Link>
-                      ) : (
-                        r.author?.name ?? 'Unknown'
-                      )}
-                    </td>
-                    <td className="small">
-                      {r.author?.joined_at ? new Date(r.author.joined_at).toLocaleDateString() : '—'}
-                    </td>
-                    <td className="small">{relativeTime(r.posted_at)}</td>
-                    <td>
-                      <span className={`badge status-${r.status}`}>{r.status}</span>
-                    </td>
-                    <td className="nowrap">
-                      <button className="btn-link" disabled={busy} onClick={() => resolve(r.id)}>
-                        Mark handled
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ul className="email-queue">
+              {g.rows.map((r) => (
+                <li key={r.id}>
+                  <Link to={`/queries/${r.id}`} className="email-link">
+                    {r.email ?? 'unknown@—'}
+                  </Link>
+                  <span className="small muted">{relativeTime(r.posted_at)}</span>
+                  <button className="btn-link" disabled={busy} onClick={() => resolve(r.id)}>
+                    Mark handled
+                  </button>
+                </li>
+              ))}
+            </ul>
           </section>
         ))
       )}

@@ -266,7 +266,7 @@ export async function queriesByCategory() {
  */
 export async function listAttentionQueries() {
   const queries = await Query.find({ needs_attention: true, is_deleted: false })
-    .populate('author_id', 'name createdAt')
+    .populate('author_id', 'name email createdAt')
     .populate('attention_flagged_by', 'name')
     .lean();
 
@@ -284,9 +284,17 @@ export async function listAttentionQueries() {
     status: q.status,
     posted_at: q.createdAt,
     flagged_at: q.attention_flagged_at,
+    // The queue lists askers by their email id; the question opens on click.
+    email: q.contact_email || q.author_id?.email || null,
+    joining_date: q.joining_date ?? null,
     flagged_by: q.attention_flagged_by ? { id: q.attention_flagged_by._id, name: q.attention_flagged_by.name } : null,
     author: q.author_id
-      ? { id: q.author_id._id, name: q.author_id.name, joined_at: q.author_id.createdAt }
+      ? {
+          id: q.author_id._id,
+          name: q.author_id.name,
+          email: q.author_id.email,
+          joined_at: q.author_id.createdAt,
+        }
       : null,
   }));
 }

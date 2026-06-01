@@ -27,6 +27,8 @@ const querySchema = new mongoose.Schema(
 
     // Context enrichment.
     contact_email: { type: String, default: null },
+    // The date the asker joined the programme/organisation (self-reported).
+    joining_date: { type: Date, default: null },
     screenshots: { type: [String], default: [] }, // relative upload paths
 
     // Auto-correction (opt-in) — original preserved when the body was corrected.

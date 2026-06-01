@@ -8,6 +8,7 @@ import adminRoutes from './adminRoutes.js';
 import faqRoutes from './faqRoutes.js';
 import chatbotRoutes from './chatbotRoutes.js';
 import jobRoutes from './jobRoutes.js';
+import taxonomyRoutes from './taxonomyRoutes.js';
 import { ai } from '../config/ai.js';
 import mongoose from 'mongoose';
 
@@ -33,5 +34,6 @@ router.use('/admin', adminRoutes);
 router.use('/faq', faqRoutes);
 router.use('/chatbot', chatbotRoutes);
 router.use('/jobs', jobRoutes);
+router.use('/taxonomy', taxonomyRoutes);
 
 export default router;

@@ -13,3 +13,4 @@ export { Vote } from './Vote.js';
 export { Bookmark } from './Bookmark.js';
 export { Comment } from './Comment.js';
 export { ChatbotSession } from './ChatbotSession.js';
+export { Taxonomy } from './Taxonomy.js';

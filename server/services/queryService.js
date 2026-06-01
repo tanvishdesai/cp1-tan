@@ -9,6 +9,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { detectGibberish } from './gibberishService.js';
 import { recordSpamStrike } from './spamService.js';
 import { findSimilarQueries } from './vectorService.js';
+import * as taxonomyService from './taxonomyService.js';
 import {
   DUPLICATE_SIMILARITY_THRESHOLD,
   MODERATION_TYPE,
@@ -31,6 +32,43 @@ function normalizeTags(tags) {
 
 const embeddingText = (title, body) => `${title}\n\n${body}`.trim();
 const hashText = (text) => crypto.createHash('sha256').update(text).digest('hex');
+
+// Parse a self-reported joining date; returns null for empty/invalid input.
+function parseJoiningDate(value) {
+  if (value == null || value === '') return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Constrain a query's category + tags to the admin-curated taxonomy. Users may
+ * only pick from admin-defined terms (plus the built-in "others" tag) — anything
+ * else is rejected here, so a hand-crafted request can't smuggle in its own
+ * category/tag the way the old free-text inputs allowed.
+ */
+async function resolveTaxonomy(rawCategory, rawTags) {
+  const [allowedCats, allowedTags] = await Promise.all([
+    taxonomyService.allowedCategories(),
+    taxonomyService.allowedTags(),
+  ]);
+
+  const category = String(rawCategory ?? '').trim().toLowerCase() || 'general';
+  if (!allowedCats.includes(category)) {
+    throw ApiError.badRequest(
+      `"${category}" is not a selectable category. Choose one of the provided categories.`,
+    );
+  }
+
+  const tags = normalizeTags(rawTags);
+  const invalid = tags.filter((t) => !allowedTags.includes(t));
+  if (invalid.length) {
+    throw ApiError.badRequest(
+      `These tags aren't selectable: ${invalid.join(', ')}. Pick a provided tag or use "others".`,
+    );
+  }
+
+  return { category, tags };
+}
 
 // Hide the author when a query is anonymous; expose ownership so the author's
 // own UI can still offer edit/delete on their anonymous post.
@@ -76,6 +114,10 @@ export async function createQuery(user, payload, screenshots = []) {
     });
   }
 
+  // Constrain category + tags to the admin-curated taxonomy (fail fast before
+  // we spend an embedding call on a request with a disallowed category/tag).
+  const { category, tags } = await resolveTaxonomy(payload.category, payload.tags);
+
   // Gate 2 — duplicate detection (never auto-reject; warn, then flag on override).
   const { embedding, embedding_hash } = await embedFor(title, body);
   const matches = await findSimilarQueries(embedding, {
@@ -101,10 +143,12 @@ export async function createQuery(user, payload, screenshots = []) {
     title,
     body,
     author_id: user._id,
-    is_anonymous: asBool(payload.is_anonymous),
-    category: String(payload.category ?? '').trim() || 'general',
-    tags: normalizeTags(payload.tags),
+    // Anonymous posting is disabled — every question is attributable to its author.
+    is_anonymous: false,
+    category,
+    tags,
     contact_email: String(payload.contact_email ?? '').trim() || null,
+    joining_date: parseJoiningDate(payload.joining_date),
     screenshots,
     original_body: wasCorrected ? payload.original_body : null,
     was_auto_corrected: wasCorrected,
@@ -322,10 +366,19 @@ export async function updateQuery(user, id, payload) {
 
   doc.title = title;
   doc.body = body;
-  if (payload.category !== undefined) doc.category = String(payload.category).trim() || 'general';
-  if (payload.tags !== undefined) doc.tags = normalizeTags(payload.tags);
+  if (payload.category !== undefined || payload.tags !== undefined) {
+    const { category, tags } = await resolveTaxonomy(
+      payload.category !== undefined ? payload.category : doc.category,
+      payload.tags !== undefined ? payload.tags : doc.tags,
+    );
+    doc.category = category;
+    doc.tags = tags;
+  }
   if (payload.contact_email !== undefined) {
     doc.contact_email = String(payload.contact_email).trim() || null;
+  }
+  if (payload.joining_date !== undefined) {
+    doc.joining_date = parseJoiningDate(payload.joining_date);
   }
 
   if (textChanged) {
