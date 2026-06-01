@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getQuery, deleteQuery, voteQuery, saveQuery, flagAttention } from '../api/queries.js';
+import { getQuery, deleteQuery, voteQuery, saveQuery, flagAttention, retagQuery } from '../api/queries.js';
+import { getTaxonomy } from '../api/taxonomy.js';
 import {
   listAnswers,
   postAnswer,
@@ -33,6 +34,7 @@ export default function QueryDetail() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState('top');
+  const [retagOpen, setRetagOpen] = useState(false);
 
   const loadAll = useCallback(async () => {
     const [q, a] = await Promise.all([getQuery(id), listAnswers(id)]);
@@ -148,6 +150,11 @@ export default function QueryDetail() {
               <span className="material-symbols-outlined">priority_high</span> Needs admin attention
             </button>
           )}
+          {canModerate && (
+            <button className="btn-link" onClick={() => setRetagOpen((o) => !o)}>
+              Re-tag{!query.is_owner ? ' (mod)' : ''}
+            </button>
+          )}
           {isAdmin && resolved && (
             <button className="btn-link" onClick={onPromote}>
               Promote to FAQ
@@ -155,6 +162,17 @@ export default function QueryDetail() {
           )}
         </div>
       </div>
+
+      {retagOpen && canModerate && (
+        <RetagPanel
+          query={query}
+          onClose={() => setRetagOpen(false)}
+          onSaved={(updated) => {
+            setQuery((q) => ({ ...q, category: updated.category, tags: updated.tags }));
+            setRetagOpen(false);
+          }}
+        />
+      )}
 
       <div className="query-meta">
         <span className={`badge status-${query.status}`}>{query.status}</span>
@@ -458,6 +476,69 @@ function AnswerComments({ answer, canComment, onChange }) {
             + Add a comment
           </button>
         ))}
+    </div>
+  );
+}
+
+const OTHERS_TAG = { slug: 'others', name: 'Others' };
+
+// Inline category/tag editor for moderators & admins, right in the thread.
+function RetagPanel({ query, onClose, onSaved }) {
+  const [taxonomy, setTaxonomy] = useState({ categories: [], tags: [] });
+  const [category, setCategory] = useState(query.category ?? '');
+  const [tags, setTags] = useState(query.tags ?? []);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    getTaxonomy()
+      .then(setTaxonomy)
+      .catch(() => {});
+  }, []);
+
+  const toggleTag = (slug) =>
+    setTags((prev) => (prev.includes(slug) ? prev.filter((t) => t !== slug) : [...prev, slug]));
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const updated = await retagQuery(query.id, { category, tags: tags.join(',') });
+      onSaved(updated);
+    } catch (err) {
+      window.alert(err.response?.data?.error ?? 'Could not update the category/tags.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="card retag-panel">
+      <strong>Change category &amp; tags</strong>
+      <label>
+        Category
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          {taxonomy.categories.map((c) => (
+            <option key={c.slug} value={c.slug}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="tag-options">
+        {[...taxonomy.tags, OTHERS_TAG].map((t) => (
+          <label key={t.slug} className="checkbox tag-option">
+            <input type="checkbox" checked={tags.includes(t.slug)} onChange={() => toggleTag(t.slug)} />
+            {t.name}
+          </label>
+        ))}
+      </div>
+      <div className="row">
+        <button className="btn-primary" onClick={save} disabled={busy}>
+          Save
+        </button>
+        <button className="btn-link" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

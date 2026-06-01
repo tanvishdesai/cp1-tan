@@ -67,6 +67,10 @@ export const listUsers = asyncHandler(async (req, res) => {
   res.json(await adminService.listUsers(req.query));
 });
 
+export const listModerators = asyncHandler(async (_req, res) => {
+  res.json({ moderators: await adminService.listModerators() });
+});
+
 export const setRole = asyncHandler(async (req, res) => {
   res.json(await adminService.setRole(req.user, req.params.id, req.body?.role));
 });

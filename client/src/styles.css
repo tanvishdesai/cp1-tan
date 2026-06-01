@@ -1057,6 +1057,17 @@ textarea {
   white-space: nowrap;
 }
 
+/* Inline moderator re-tag panel on a question thread. */
+.retag-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.75rem 0 1rem;
+}
+.answer-edit {
+  margin: 0.5rem 0;
+}
+
 /* Forum questions surfaced in the FAQ search. */
 .forum-results {
   list-style: none;

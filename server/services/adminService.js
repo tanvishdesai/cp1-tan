@@ -25,7 +25,7 @@ const paginate = (opts) => {
 
 /** Dashboard metrics overview. */
 export async function getMetrics() {
-  const [users, banned, queries, open, resolved, answers, faqs, pendingModeration] =
+  const [users, banned, queries, open, resolved, answers, faqs, pendingModeration, needsAttention] =
     await Promise.all([
       User.countDocuments({ is_deleted: false }),
       User.countDocuments({ is_deleted: false, is_banned: true }),
@@ -35,6 +35,7 @@ export async function getMetrics() {
       Answer.countDocuments({ is_deleted: false }),
       FaqEntry.countDocuments({ is_deleted: false }),
       ModerationQueue.countDocuments({ status: MODERATION_STATUS.PENDING }),
+      Query.countDocuments({ is_deleted: false, needs_attention: true }),
     ]);
   const resolution_rate = queries ? Math.round((resolved / queries) * 1000) / 10 : 0;
   return {
@@ -46,8 +47,30 @@ export async function getMetrics() {
     answers,
     faqs,
     pending_moderation: pendingModeration,
+    needs_attention: needsAttention,
     resolution_rate,
   };
+}
+
+/** Every moderator (and admins, who moderate implicitly), for the admin roster. */
+export async function listModerators() {
+  const mods = await User.find({
+    is_deleted: false,
+    $or: [{ is_moderator: true }, { role: ROLES.ADMIN }],
+  })
+    .select('name email role is_moderator points createdAt')
+    .sort({ role: 1, name: 1 })
+    .lean();
+  return mods.map((u) => ({
+    id: u._id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    is_moderator: Boolean(u.is_moderator),
+    is_admin: u.role === ROLES.ADMIN,
+    points: u.points,
+    since: u.createdAt,
+  }));
 }
 
 /** Paginated user list with optional name/email search. */

@@ -46,8 +46,17 @@ export default function AdminOverview() {
   const modHigh = modQueue >= 10;
   const aiOk = health?.status === 'ok';
 
+  const needsAttention = metrics.needs_attention || 0;
+
   // "Needs attention" items, each backed by real data + a deep link.
   const attention = [
+    needsAttention > 0 && {
+      icon: 'priority_high',
+      title: 'Questions need admin attention',
+      sub: `${needsAttention} question${needsAttention === 1 ? '' : 's'} escalated for approval`,
+      to: '/admin/attention',
+      cta: 'Review',
+    },
     modQueue > 0 && {
       icon: 'flag',
       title: 'Flagged content review',

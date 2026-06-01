@@ -15,6 +15,11 @@ export async function listUsers(params = {}) {
   return data;
 }
 
+export async function listModerators() {
+  const { data } = await api.get('/admin/moderators');
+  return data.moderators;
+}
+
 export async function setRole(id, role) {
   const { data } = await api.post(`/admin/users/${id}/role`, { role });
   return data;

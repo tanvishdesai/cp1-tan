@@ -1,4 +1,14 @@
 import { Notification } from '../models/Notification.js';
+import { User } from '../models/User.js';
+import { NOTIFICATION_TYPE, ROLES } from '../config/constants.js';
+
+// Routine engagement pings admins don't need — they moderate, they don't farm
+// reputation — so we don't notify an admin recipient about these.
+const QUIET_FOR_ADMINS = new Set([
+  NOTIFICATION_TYPE.ANSWER,
+  NOTIFICATION_TYPE.LIKE,
+  NOTIFICATION_TYPE.COMMENT,
+]);
 
 /**
  * Create a notification. No-op (returns null) when there's no recipient — keeps
@@ -14,6 +24,13 @@ export async function notify({
   answerId = null,
 }) {
   if (!recipientId) return null;
+
+  // Don't spam admins with routine answer/like/comment notifications.
+  if (QUIET_FOR_ADMINS.has(type)) {
+    const recipient = await User.findById(recipientId).select('role').lean();
+    if (recipient?.role === ROLES.ADMIN) return null;
+  }
+
   return Notification.create({
     recipient_id: recipientId,
     type,

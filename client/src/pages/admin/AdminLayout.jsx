@@ -7,6 +7,7 @@ const TABS = [
   { to: '/admin/faq', label: 'FAQ' },
   { to: '/admin/taxonomy', label: 'Categories & Tags' },
   { to: '/admin/users', label: 'Users' },
+  { to: '/admin/moderators', label: 'Moderators' },
   { to: '/admin/audit', label: 'Audit log' },
   { to: '/admin/rollback', label: 'Rollback' },
   { to: '/admin/maintenance', label: 'Maintenance' },

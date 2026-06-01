@@ -10,6 +10,7 @@ router.get('/metrics', ctrl.metrics);
 
 // User management.
 router.get('/users', ctrl.listUsers);
+router.get('/moderators', ctrl.listModerators);
 router.post('/users/:id/ban', ctrl.banUser);
 router.post('/users/:id/unban', ctrl.unbanUser);
 router.post('/users/:id/badge', ctrl.issueNegativeBadge);
